@@ -7,6 +7,7 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use App\Models\Control;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 
 class ControlController extends Controller
@@ -105,5 +106,59 @@ class ControlController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function generateLargeData(Request $request)
+    {
+        $count = (int) $request->query('count', 500000);
+        $chunkSize = 5000; // inserts por batch
+
+        $programas = [
+            'Ingeniería en Sistemas',
+            'Ingeniería de Software',
+            'Ciencias de la Computación',
+            'Ingeniería en Telecomunicaciones',
+            'Ingeniería Informática',
+            'Matemáticas',
+            'Física',
+            'Biología'
+        ];
+
+        $startTime = microtime(true);
+        $totalInserted = 0;
+
+        try {
+            // Único ciclo que genera e inserta en chunks
+            for ($i = 1; $i <= $count; $i += $chunkSize) {
+                $batch = [];
+                $batchEnd = min($i + $chunkSize - 1, $count);
+
+                // Generar lote
+                for ($j = $i; $j <= $batchEnd; $j++) {
+                    $batch[] = [
+                        'nombre' => 'Usuario_' . str_pad($j, 6, '0', STR_PAD_LEFT),
+                        'estudios' => $programas[array_rand($programas)],
+                    ];
+                }
+
+                // Insertar lote
+                DB::table('controls')->insert($batch);
+                $totalInserted += count($batch);
+            }
+
+            $elapsed = microtime(true) - $startTime;
+
+            return response()->json([
+                'message' => 'Generación completada exitosamente',
+                'total_insertados' => $totalInserted,
+                'tiempo_segundos' => round($elapsed, 2),
+                'registros_por_segundo' => round($totalInserted / $elapsed, 2)
+            ], 201);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Error durante la generación',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
 }

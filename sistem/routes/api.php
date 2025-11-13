@@ -20,7 +20,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Endpoint para lanzar la generación de 500k registros
-// Endpoint para lanzar la generación de 500k registros
 Route::get('/generate-large-data', [ControlController::class, 'generateLargeData']);
 
 // Endpoints públicos para controles (GET solamente) protegidos por rate-limit 'rpm'
